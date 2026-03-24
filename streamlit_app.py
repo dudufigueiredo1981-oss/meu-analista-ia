@@ -7,7 +7,7 @@ st.set_page_config(page_title="Analista de Discurso", page_icon="📚")
 st.title("📚 Analista de Discurso IA")
 
 # --- COLOQUE A SUA CHAVE NOVA DO GOOGLE AI STUDIO AQUI ---
-API_KEY = "AIzaSyBUkswqJvINGeeXjWIOr8Kr1RXHG9jtIWg"
+API_KEY = "AIzaSyCBYDclNRVBWB9LzkFq0JLqtYn7mKafxJQ"
 
 arquivo_pdf = st.file_uploader("Suba o PDF do livro", type="pdf")
 pergunta = st.text_input("O que deseja saber sobre o texto?")
