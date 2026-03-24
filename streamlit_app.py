@@ -3,51 +3,59 @@ import requests
 import json
 from pypdf import PdfReader
 
-st.set_page_config(page_title="Analista Acadêmico", page_icon="📚")
+st.set_page_config(page_title="Analista de Discurso", page_icon="📚")
 st.title("📚 Analista de Discurso IA")
 
-# --- SUA CHAVE NOVA AQUI ---
+# --- COLOQUE A SUA CHAVE NOVA DO GOOGLE AI STUDIO AQUI ---
 API_KEY = "AIzaSyBUkswqJvINGeeXjWIOr8Kr1RXHG9jtIWg"
 
-def chamar_google_direto(texto, pergunta):
-    # A URL EXATA QUE O GOOGLE EXIGE NA VERSÃO V1 (Sem o erro 404)
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
-    
-    payload = {
-        "contents": [{
-            "parts": [{
-                "text": f"Responda à pergunta baseando-se no texto abaixo:\n\nTEXTO:\n{texto}\n\nPERGUNTA: {pergunta}"
-            }]
-        }]
-    }
-    
-    headers = {'Content-Type': 'application/json'}
-    return requests.post(url, headers=headers, json=payload)
-
-arquivo_pdf = st.file_uploader("Suba o PDF", type="pdf")
-pergunta = st.text_input("O que deseja saber?")
+arquivo_pdf = st.file_uploader("Suba o PDF do livro", type="pdf")
+pergunta = st.text_input("O que deseja saber sobre o texto?")
 
 if arquivo_pdf and pergunta:
-    with st.spinner("Analisando..."):
+    with st.spinner("Lendo e analisando o documento..."):
         try:
+            # 1. Extração do texto (Primeiras 20 páginas para evitar lentidão)
             reader = PdfReader(arquivo_pdf)
-            # Pegando apenas as primeiras 15 páginas para ser instantâneo
-            texto_contexto = "\n".join([p.extract_text() for p in reader.pages[:15]])
+            texto_extraido = ""
+            for page in reader.pages[:20]:
+                content = page.extract_text()
+                if content:
+                    texto_extraido += content + "\n"
             
-            response = chamar_google_direto(texto_contexto, pergunta)
-            
+            # 2. Definição do Pacote de Dados (O famoso 'payload')
+            payload = {
+                "contents": [{
+                    "parts": [{
+                        "text": f"Contexto acadêmico:\n{texto_extraido}\n\nPergunta: {pergunta}"
+                    }]
+                }]
+            }
+            headers = {'Content-Type': 'application/json'}
+
+            # 3. Tentativa 1: Modelo Gemini 1.5 Flash (Mais rápido)
+            url_flash = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+            response = requests.post(url_flash, headers=headers, json=payload)
+
+            # 4. Verificação e Tentativa 2 (Se a 1 falhar)
             if response.status_code == 200:
-                res_json = response.json()
+                resultado = response.json()['candidates'][0]['content']['parts'][0]['text']
                 st.markdown("### 🤖 Resposta:")
-                st.write(res_json['candidates'][0]['content']['parts'][0]['text'])
+                st.write(resultado)
             else:
-                # Se ainda der 404, tentamos o modelo 'gemini-pro' (versão clássica)
-                url_alt = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={API_KEY}"
-                res_alt = requests.post(url_alt, headers={'Content-Type': 'application/json'}, json=payload)
+                # Tenta o modelo Gemini Pro caso o Flash dê erro 404
+                url_pro = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={API_KEY}"
+                response_pro = requests.post(url_pro, headers=headers, json=payload)
                 
-                if res_alt.status_code == 200:
-                    st.write(res_alt.json()['candidates'][0]['content']['parts'][0]['text'])
+                if response_pro.status_code == 200:
+                    resultado = response_pro.json()['candidates'][0]['content']['parts'][0]['text']
+                    st.markdown("### 🤖 Resposta (via Gemini Pro):")
+                    st.write(resultado)
                 else:
-                    st.error(f"Erro persistente do Google: {response.status_code}. Verifique se sua chave está ativa no AI Studio.")
+                    st.error(f"Erro do Google: {response_pro.status_code}. Verifique se sua chave API está correta.")
+
         except Exception as e:
             st.error(f"Erro técnico: {e}")
+
+st.divider()
+st.caption("Versão Corrigida - Conexão Direta v1")
