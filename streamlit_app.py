@@ -6,7 +6,7 @@ st.set_page_config(page_title="Analista de Discurso IA", page_icon="📚")
 st.title("📚 Analista de Discurso IA")
 
 # --- SUA CHAVE API ---
-API_KEY = "AIzaSyAyyPLimH1lXBQ6pexOlu_xLGiFAEna-uc"
+API_KEY = "AIzaSyAzj_xPuSAY7kLJQf5ej6qhF3_zs0XGRzQ"
 
 try:
     genai.configure(api_key=API_KEY)
