@@ -7,7 +7,7 @@ st.set_page_config(page_title="Analista de Discurso", page_icon="📚")
 st.title("📚 Analista de Discurso IA")
 
 # --- SUA CHAVE API ---
-API_KEY = "AIzaSyDlmVy73h2AwVorUWpvebB8-G2KYiL7xHY"
+API_KEY = "AIzaSyAhsflXcYb6Mjxk715RoU6Llx8pWYB_lkE"
 
 # A URL QUE SEMPRE FUNCIONA NO AI STUDIO (v1beta + gemini-1.5-flash)
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
