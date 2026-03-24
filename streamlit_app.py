@@ -1,44 +1,54 @@
 import streamlit as st
-import requests
-import json
+import google.generativeai as genai
 from pypdf import PdfReader
 
-st.set_page_config(page_title="Analista de Discurso", page_icon="📚")
+# 1. Configuração Visual
+st.set_page_config(page_title="Analista de Discurso IA", page_icon="📚")
 st.title("📚 Analista de Discurso IA")
 
-# --- SUA CHAVE API ---
-API_KEY = "AIzaSyAhsflXcYb6Mjxk715RoU6Llx8pWYB_lkE"
+# 2. Configuração da API (AQUI ESTÁ O SEGREDO)
+# Substitua pela sua chave MAIS RECENTE do AI Studio
+API_KEY = "AIzaSyAyyPLimH1lXBQ6pexOlu_xLGiFAEna-uc"
 
-# A URL QUE SEMPRE FUNCIONA NO AI STUDIO (v1beta + gemini-1.5-flash)
-URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+genai.configure(api_key=API_KEY)
 
-arquivo_pdf = st.file_uploader("Suba o PDF do livro", type="pdf")
-pergunta = st.text_input("O que deseja saber?")
+# 3. Interface de Usuário
+arquivo_pdf = st.file_uploader("Escolha o PDF (Eni Orlandi)", type="pdf")
+pergunta = st.text_input("O que deseja saber sobre o texto?")
 
 if arquivo_pdf and pergunta:
-    with st.spinner("Consultando o Gemini..."):
+    with st.spinner("Analisando o livro..."):
         try:
+            # Lendo o PDF
             reader = PdfReader(arquivo_pdf)
-            texto = ""
-            # Pegando só as 10 primeiras páginas para o primeiro teste ser rápido
-            for page in reader.pages[:10]:
-                texto += page.extract_text() + " "
+            texto_completo = ""
+            for i in range(min(len(reader.pages), 20)):
+                page_text = reader.pages[i].extract_text()
+                if page_text:
+                    texto_completo += page_text + "\n"
             
-            payload = {
-                "contents": [{
-                    "parts": [{"text": f"Contexto: {texto[:15000]}\n\nPergunta: {pergunta}"}]
-                }]
-            }
+            # CHAMADA OFICIAL (O modelo 'gemini-1.5-flash' é o mais estável hoje)
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
-            response = requests.post(URL, json=payload)
+            # Criando o prompt
+            prompt_final = f"Baseado no texto abaixo, responda: {pergunta}\n\nTEXTO:\n{texto_completo[:30000]}"
             
-            if response.status_code == 200:
-                res_json = response.json()
-                st.markdown("### 🤖 Resposta:")
-                st.write(res_json['candidates'][0]['content']['parts'][0]['text'])
-            else:
-                st.error(f"Erro {response.status_code}: O Google ainda não reconheceu o modelo.")
-                st.info("DICA: Gere uma NOVA CHAVE no AI Studio e cole aqui.")
-
+            # Gerando a resposta
+            response = model.generate_content(prompt_final)
+            
+            st.markdown("---")
+            st.subheader("🤖 Análise da IA:")
+            st.write(response.text)
+            
         except Exception as e:
-            st.error(f"Erro técnico: {e}")
+            # Se der erro de "model not found", tentamos o modelo antigo automaticamente
+            try:
+                model_alt = genai.GenerativeModel('gemini-pro')
+                response_alt = model_alt.generate_content(prompt_final)
+                st.write(response_alt.text)
+            except:
+                st.error(f"Erro técnico: {e}")
+                st.info("Verifique se a API Key no código é a mesma do seu AI Studio.")
+
+st.divider()
+st.caption("Desenvolvido para análise acadêmica via Google Gemini.")
