@@ -7,7 +7,7 @@ st.set_page_config(page_title="Analista de Discurso", page_icon="📚")
 st.title("📚 Analista de Discurso IA")
 
 # 1. Tente com o Gemini Pro (O mais compatível)
-API_KEY = "AIzaSyCBYDclNRVBWB9LzkFq0JLqtYn7mKafxJQ"
+API_KEY = "AIzaSyBUkswqJvINGeeXjWIOr8Kr1RXHG9jtIWg"
 URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={API_KEY}"
 
 arquivo_pdf = st.file_uploader("Suba o PDF", type="pdf")
