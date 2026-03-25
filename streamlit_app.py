@@ -1,54 +1,58 @@
 import streamlit as st
 import requests
+import json
 from pypdf import PdfReader
 
-st.set_page_config(page_title="Analista de Discurso", page_icon="📚")
+st.set_page_config(page_title="Analista de Discurso IA", page_icon="📚")
 st.title("📚 Analista de Discurso IA")
 
-# --- COLE A CHAVE DO 'NEW PROJECT' AQUI ---
+# --- SUA CHAVE API (A QUE VOCÊ CRIOU NO AI STUDIO) ---
 API_KEY = "AIzaSyDTmogNg2PkpOQ68fUhvKXcpVudMwa3l3Y"
 
-# A URL CORINGA (Versão 1.5 Flash - Versão de Produção)
-URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+# A URL MAIS RESILIENTE DO GOOGLE (Versão 1.5 Flash - Caminho de Produção)
+URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
-arquivo_pdf = st.file_uploader("Suba o PDF do livro", type="pdf")
-pergunta = st.text_input("Sua pergunta:")
+arquivo_pdf = st.file_uploader("Escolha o livro (PDF)", type="pdf")
+pergunta = st.text_input("O que deseja saber sobre o texto?")
 
 if arquivo_pdf and pergunta:
-    with st.spinner("Conectando ao cérebro da IA..."):
+    with st.spinner("Analisando com a URL de Contingência..."):
         try:
+            # 1. Extração de texto (Apenas 5 páginas para garantir que não trave)
             reader = PdfReader(arquivo_pdf)
-            # Pegando só as 5 primeiras páginas para o teste ser infalível
-            texto = ""
-            for i in range(min(len(reader.pages), 5)):
-                texto += reader.pages[i].extract_text() + "\n"
+            texto_extraido = ""
+            for page in reader.pages[:5]:
+                content = page.extract_text()
+                if content:
+                    texto_extraido += content + " "
             
+            # 2. Limpeza Radical (Remove caracteres que bugam a API)
+            texto_limpo = " ".join(texto_extraido.split())
+            
+            # 3. Montagem do Pedido
             payload = {
                 "contents": [{
-                    "parts": [{"text": f"Contexto acadêmico: {texto[:10000]}\n\nPergunta: {pergunta}"}]
+                    "parts": [{
+                        "text": f"Responda à pergunta baseando-se no texto:\n\nTEXTO: {texto_limpo[:10000]}\n\nPERGUNTA: {pergunta}"
+                    }]
                 }]
             }
             
-            # Chamada direta
+            # 4. Envio Direto (Usando o método POST puro)
             response = requests.post(URL, json=payload, headers={'Content-Type': 'application/json'})
             
             if response.status_code == 200:
                 res_data = response.json()
-                st.markdown("### 🤖 Análise:")
+                st.markdown("---")
+                st.subheader("🤖 Resposta:")
                 st.write(res_data['candidates'][0]['content']['parts'][0]['text'])
             else:
-                # SE DER 404 DE NOVO, O GOOGLE EXIGE O CAMINHO v1beta COM O NOME ANTIGO
-                URL_BETA = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
-                res_beta = requests.post(URL_BETA, json=payload)
-                
-                if res_beta.status_code == 200:
-                    st.write(res_beta.json()['candidates'][0]['content']['parts'][0]['text'])
-                else:
-                    st.error(f"Erro {response.status_code}: O Google ainda não ativou sua chave no servidor.")
-                    st.info("Aguarde 5 minutos. Às vezes a chave nova demora para 'propagar' no sistema do Google.")
+                # SE DER 404 AQUI, É PORQUE A CHAVE ESTÁ INVÁLIDA
+                st.error(f"Erro do Google ({response.status_code}): O modelo não foi encontrado na sua conta.")
+                st.info("Dudu, se der 404 agora, crie uma chave em outro Gmail. Às vezes o Google bloqueia um e-mail específico.")
 
         except Exception as e:
             st.error(f"Erro técnico: {e}")
 
 st.divider()
-st.caption("Conexão Direta v1/v1beta - Estabilizada")
+st.caption("Versão de Emergência - Analista de Discurso")
